@@ -1,0 +1,25 @@
+license = "MIT"
+
+modLoader="javafml"
+loaderVersion="[1,)"
+
+[[mods]]
+modId = "${id}"
+displayName = "${name}"
+version = "${version}"
+authors = "MagicSweet"
+description = "Allows to open game mode switcher even if you have no permission to do that"
+
+logoFile = "assets/persistentgamemodeswitcher/icon.png"
+displayURL = "https://www.curseforge.com/minecraft/mc-mods/persistentgamemodeswitcher"
+issueTrackerUrl = "https://github.com/MagicSweet-dev/PersistentGamemodeSwitcher/issues"
+
+[[mixins]]
+config = "persistentgamemodeswitcher.mixins.json"
+
+[[dependencies.${id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "CLIENT"

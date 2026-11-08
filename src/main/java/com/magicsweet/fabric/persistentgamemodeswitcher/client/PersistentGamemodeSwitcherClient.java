@@ -18,6 +18,7 @@ public class PersistentGamemodeSwitcherClient implements ClientModInitializer {
 	}
 
 	public static void openGamemodeSwitcher() {
+		//$ gui_setScreen_swap 'new GameModeSwitcherScreen()'
 		Minecraft.getInstance().gui.setScreen(new GameModeSwitcherScreen());
 	}
 

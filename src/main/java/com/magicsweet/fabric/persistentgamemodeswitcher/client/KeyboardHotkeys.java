@@ -6,6 +6,9 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 
+//? if <26.3
+//import org.lwjgl.glfw.GLFW;
+
 public class KeyboardHotkeys {
 	public static final KeyMapping gmSwitcherKeybind;
 	public static final KeyMapping gmCycleKeybind;
@@ -16,7 +19,13 @@ public class KeyboardHotkeys {
 		gmSwitcherKeybind = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.persistentgamemodeswitcher.activate",
 			InputConstants.Type.KEYBOARD,
+
+			//? if >=26.3 {
 			InputConstants.KEY_F4,
+			//?} else {
+			/*GLFW.GLFW_KEY_F4,
+			*///?}
+			
 			category
 		));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -28,7 +37,13 @@ public class KeyboardHotkeys {
 		gmCycleKeybind = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 			"key.persistentgamemodeswitcher.activate.cycle",
 			InputConstants.Type.KEYBOARD,
+
+			//? if >=26.3 {
 			InputConstants.UNKNOWN.getValue(),
+			//?} else {
+			/*GLFW.GLFW_KEY_UNKNOWN,
+			*///?}
+
 			category
 		));
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {

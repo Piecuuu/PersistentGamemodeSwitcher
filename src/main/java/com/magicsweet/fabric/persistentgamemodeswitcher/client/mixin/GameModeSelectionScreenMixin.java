@@ -68,6 +68,7 @@ public abstract class GameModeSelectionScreenMixin {
 			}
 			if (!checkButtons()) {
 				this.switchToHoveredGameMode();
+				//$ gui_setScreen_swap 'null'
 				Minecraft.getInstance().gui.setScreen(null);
 				cir.setReturnValue(true);
 			} else cir.setReturnValue(false);
@@ -77,6 +78,7 @@ public abstract class GameModeSelectionScreenMixin {
 	@Unique
     private boolean checkButtons() {
 		var key = KeyMappingHelper.getBoundKeyOf(KeyboardHotkeys.gmSwitcherKeybind);
+		//~ if <=26.2 'key.getValue()' -> 'Minecraft.getInstance().getWindow(), key.getValue()' as _
 		return InputConstants.isKeyDown(key.getValue());
 	}
 }

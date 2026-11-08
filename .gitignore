@@ -2,6 +2,10 @@
 /build/
 /run/
 
+buildSrc/build
+
+versions
+
 # Ignore Gradle GUI config
 gradle-app.setting
 
@@ -18,3 +22,6 @@ gradle-app.setting
 .idea/
 
 *.iml
+
+# VSCode
+.vscode

@@ -1,0 +1,152 @@
+plugins {
+    id("net.fabricmc.fabric-loom-remap") version "1.18-SNAPSHOT" apply false
+    id "dev.kikugie.loom-back-compat"
+}
+
+// from the stonecutter multiloader template
+version = "${property("mod.version")}+${sc.current.version}"
+base.archivesName = "${property("mod.id")}-fabric"
+
+def requiredJava = {
+    if (sc.current.parsed >= "26.1") return JavaVersion.VERSION_25
+    if (sc.current.parsed >= "1.20.5") return JavaVersion.VERSION_21
+    if (sc.current.parsed >= "1.18") return JavaVersion.VERSION_17
+    if (sc.current.parsed >= "1.17") return JavaVersion.VERSION_16
+    return JavaVersion.VERSION_1_8
+}()
+
+// This can be used for publishing on Modrinth and Curseforge
+def compatibleVersions = (sc.properties.rawOrNull("mod", "mc_releases")
+    ?.asList() ?: []).collect { it.toString() }
+
+repositories {
+    /**
+     * Restricts dependency search of the given [groups] to the [maven URL][url],
+     * improving the setup speed.
+     */
+    def strictMaven = { String url, String alias, String... groups ->
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = alias
+                    url = url
+                }
+            }
+            filter {
+                groups.each { includeGroup(it) }
+            }
+        }
+    }
+    //strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
+    //strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
+}
+
+dependencies {
+    /**
+     * Fetches only the required Fabric API modules to not waste time downloading all of them for each version.
+     * @see <a href="https://github.com/FabricMC/fabric">List of Fabric API modules</a>
+     */
+    def fapi = { String... modules ->
+        modules.each {
+            modImplementation(fabricApi.module(it, sc.properties.get("deps.fabric_api")))
+        }
+    }
+
+    minecraft("com.mojang:minecraft:${sc.current.version}")
+    // Applies Mojang Mappings on obfuscated versions
+    loomx.applyMojangMappings()
+
+    // Use `mod{dependency type}` even on 26.1+ - loom-back-compat converts them
+    modImplementation("net.fabricmc:fabric-loader:${property("deps.fabric_loader")}")
+    if(sc.current.parsed <= "1.21.11") {
+        fapi("fabric-key-binding-api-v1", "fabric-lifecycle-events-v1")
+    } else {
+        fapi("fabric-key-mapping-api-v1", "fabric-lifecycle-events-v1")
+    }
+}
+
+loom {
+    fabricModJsonPath = rootProject.file("src/main/resources/fabric.mod.json") // Useful for interface injection
+    /*accessWidenerPath = sc.process(
+        rootProject.file("src/main/resources/template.ct"),
+        "build/processed.ct"
+    )*/ // we have no access wideners
+
+    decompilerOptions.named("vineflower") {
+        options.put("mark-corresponding-synthetics", "1") // Adds names to lambdas - useful for mixins
+    }
+
+    runConfigs.all {
+        preferGradleTask = true
+        generateRunConfig = true
+        runDirectory = rootProject.file("run") // Shares the run directory between versions
+        jvmArguments.add("-Dmixin.debug.export=true") // Exports transformed classes for debugging
+    }
+}
+
+java {
+    withSourcesJar()
+    targetCompatibility = requiredJava
+    sourceCompatibility = requiredJava
+
+    toolchain {
+        vendor = JvmVendorSpec.ADOPTIUM
+        languageVersion = JavaLanguageVersion.of(requiredJava.majorVersion)
+    }
+}
+
+tasks {
+    processResources {
+        def register = { Map props, String key, String value ->
+            inputs.property(key, value)
+            props[key] = value
+        }
+
+        def props = [:]
+        register(props, "id", sc.properties.get("mod.id"))
+        register(props, "name", sc.properties.get("mod.name"))
+        register(props, "version", sc.properties.get("mod.version"))
+        register(props, "minecraft", sc.properties.get("mod.mc_compat"))
+        register(props, "loader", (sc.properties.get("deps.fabric_loader") =~ /\d+\.\d+/)[0][0])
+        register(props, "fabric_api", sc.properties.get("deps.fabric_api"))
+
+        filesMatching("fabric.mod.json") {
+            expand(props)
+        }
+
+        def mixinJava = "JAVA_${requiredJava.majorVersion}"
+        filesMatching("*.mixins.json") {
+            expand("java": mixinJava)
+        }
+
+        exclude("META-INF/neoforge.mods.toml")
+    }
+}
+
+project.tasks.withType(Jar).configureEach { Jar jarTask ->
+    def name = project.property("mod.id").toString()
+
+    jarTask.inputs.property("mod_id", name)
+
+    jarTask.from("../../LICENSE") {
+        rename { "${it}-${name}".toString() }
+    }
+}
+
+project.getTasks().register("buildAndCollect", Copy.class) { Copy task ->
+    task.group = "build"
+    task.description = "Builds mod jars and copies results to build/libs/{mod version}/"
+
+    task.inputs.property("version", project.property("mod.version"))
+
+    task.from(
+        loomx.modJar.flatMap { it.archiveFile },
+        loomx.modSourcesJar.flatMap { it.archiveFile }
+    )
+
+    task.into(
+        rootProject.layout.buildDirectory.dir(
+            "libs/${project.property('mod.version')}"
+        )
+    )
+}

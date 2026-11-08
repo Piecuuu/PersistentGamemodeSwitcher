@@ -1,0 +1,58 @@
+plugins {
+    id("dev.kikugie.stonecutter").version "0.10"
+}
+
+stonecutter.active "26.3-fabric"
+
+stonecutter.parameters {
+    def (version, loader) = current.project.split('-', 2)
+
+    properties {
+        tags(version, loader)
+    }
+
+    constants {
+        match(loader, "fabric", "neoforge")
+    }
+
+    swaps["mod_version"] = "\"${properties.get('mod.version')}\";".toString()
+    swaps["minecraft"] = "\"${node.metadata.version}\";".toString()
+    constants["release"] = properties.get("mod.id") != "template".toString()
+    dependencies["fapi"] = properties.getOrNull("deps.fabric_api").toString() ?: "0"
+
+    swaps["gui_setScreen_swap"] = eval(current.version, '<26.2')
+            ? 'Minecraft.getInstance().setScreen($1);'
+            : 'Minecraft.getInstance().gui.setScreen($1);'
+
+    replacements {
+        string(current.parsed >= "1.21.11") {
+            replace("ResourceLocation", "Identifier")
+        }
+
+        string(current.parsed >= "26.1") {
+            replace("classTweaker v2 named", "classTweaker v2 official")
+        }
+
+        string(current.parsed <= "1.21.11") {
+            replace(
+                "net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper",
+                "net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper"
+            )
+            replace(
+                "KeyMappingHelper",
+                "KeyBindingHelper"
+            )
+            replace(
+                ".registerKeyMapping",
+                ".registerKeyBinding"
+            )
+        }
+
+        string(current.parsed <= "26.2") {
+            replace(
+                "InputConstants.Type.KEYBOARD",
+                "InputConstants.Type.KEYSYM"
+            )
+        }
+    }
+}

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "persistentgamemodeswitcher",
+  "id": "${id}",
   "version": "${version}",
-  "name": "PersistentGamemodeSwitcher",
+  "name": "${name}",
   "description": "Allows to open game mode switcher even if you have no permission to do that",
   "authors": [
     "MagicSweet"
@@ -27,8 +27,8 @@
     "persistentgamemodeswitcher.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.11.3",
-    "fabric-api": ">=${fabric_api_version}",
-    "minecraft": ">=${mc_version}"
+    "fabricloader": ">=${loader}",
+    "fabric-api": ">=${fabric_api}",
+    "minecraft": "${minecraft}"
   }
 }
